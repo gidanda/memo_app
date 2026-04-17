@@ -24,6 +24,7 @@ type Memo = {
 };
 
 let memos: Memo[] = [];
+let editingMemoId: number | null = null;
 
 const formElement = document.querySelector<HTMLFormElement>('#memo-form');
 const titleInputElement = document.querySelector<HTMLInputElement>('#memo-title');
@@ -61,7 +62,15 @@ function loadMemos(): void {
 function renderMemos(): void {
   memoList.innerHTML = '';
 
-  for (const memo of memos) {
+  const sortedMemos = [...memos].sort((a, b) => {
+    if (a.isPinned === b.isPinned) {
+      return 0;
+    }
+
+    return a.isPinned ? -1 : 1;
+  });
+
+  for (const memo of sortedMemos) {
     const li = document.createElement('li');
 
     const title = document.createElement('h2');
@@ -70,8 +79,45 @@ function renderMemos(): void {
     const content = document.createElement('p');
     content.textContent = memo.content;
 
+    const editButton = document.createElement('button');
+    editButton.textContent = '編集';
+
+    editButton.addEventListener('click', () => {
+      titleInput.value = memo.title;
+      contentInput.value = memo.content;
+      editingMemoId = memo.id;
+    });
+
+    const pinButton = document.createElement('button');
+    pinButton.textContent = memo.isPinned ? 'Unpin' : 'Pin';
+
+    pinButton.addEventListener('click', () => {
+      memo.isPinned = !memo.isPinned;
+      renderMemos();
+      saveMemos();
+    });
+
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = '削除';
+
+    deleteButton.addEventListener('click', () => {
+      memos = memos.filter((item) => item.id !== memo.id);
+
+      if (editingMemoId === memo.id) {
+        editingMemoId = null;
+        titleInput.value = '';
+        contentInput.value = '';
+      }
+
+      renderMemos();
+      saveMemos();
+    });
+
     li.appendChild(title);
     li.appendChild(content);
+    li.appendChild(editButton);
+    li.appendChild(pinButton);
+    li.appendChild(deleteButton);
 
     memoList.appendChild(li);
   }
@@ -84,29 +130,42 @@ function saveMemos(): void {
 form.addEventListener('submit', (event) => {
   event.preventDefault();
 
-  const id = Date.now();
   const title = titleInput.value.trim();
   const content = contentInput.value.trim();
-  const isPinned = false;
   const now = new Date().toISOString();
 
   if (title === '' || content === '') return;
-  const memo: Memo = {
-    id,
-    title,
-    content,
-    isPinned,
-    createdAt: now,
-    updatedAt: now,
-  };
 
-  memos.push(memo);
+  if (editingMemoId === null) {
+    const memo: Memo = {
+      id: Date.now(),
+      title,
+      content,
+      isPinned: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    memos.push(memo);
+  } else {
+    memos = memos.map((memo) => {
+      if (memo.id !== editingMemoId) {
+        return memo;
+      }
+
+      return {
+        ...memo,
+        title,
+        content,
+        updatedAt: now,
+      };
+    });
+
+    editingMemoId = null;
+  }
 
   renderMemos();
   saveMemos();
-
-  console.log(memo);
-  console.log(memos);
 
   titleInput.value = '';
   contentInput.value = '';
