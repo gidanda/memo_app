@@ -1,3 +1,5 @@
+import './style.css';
+
 const app = document.querySelector<HTMLDivElement>('#app');
 
 if (!app) {
@@ -5,13 +7,15 @@ if (!app) {
 }
 
 app.innerHTML = `
-  <h1>Memo App</h1>
-  <form id="memo-form">
-    <input id="memo-title" type="text" placeholder="タイトル" />
-    <textarea id="memo-content" placeholder="本文"></textarea>
-    <button type="submit">保存</button>
-  </form>
-  <ul id="memo-list"></ul>
+  <div class="container">
+    <h1>Memo App</h1>
+    <form id="memo-form" class="memo-form">
+      <input id="memo-title" class="memo-title-input" type="text" placeholder="タイトル" />
+      <textarea id="memo-content" class="memo-content-input" placeholder="本文"></textarea>
+      <button type="submit" class="primary-button">保存</button>
+    </form>
+    <ul id="memo-list" class="memo-list"></ul>
+  </div>
 `;
 
 type Memo = {
@@ -72,15 +76,22 @@ function renderMemos(): void {
 
   for (const memo of sortedMemos) {
     const li = document.createElement('li');
+    li.classList.add('memo-item');
 
     const title = document.createElement('h2');
     title.textContent = memo.title;
+    title.classList.add('memo-item-title');
 
     const content = document.createElement('p');
     content.textContent = memo.content;
+    content.classList.add('memo-item-content');
+
+    const buttonRow = document.createElement('div');
+    buttonRow.classList.add('memo-item-buttons');
 
     const editButton = document.createElement('button');
     editButton.textContent = '編集';
+    editButton.classList.add('secondary-button');
 
     editButton.addEventListener('click', () => {
       titleInput.value = memo.title;
@@ -90,6 +101,7 @@ function renderMemos(): void {
 
     const pinButton = document.createElement('button');
     pinButton.textContent = memo.isPinned ? 'Unpin' : 'Pin';
+    pinButton.classList.add('secondary-button');
 
     pinButton.addEventListener('click', () => {
       memo.isPinned = !memo.isPinned;
@@ -99,6 +111,7 @@ function renderMemos(): void {
 
     const deleteButton = document.createElement('button');
     deleteButton.textContent = '削除';
+    deleteButton.classList.add('danger-button');
 
     deleteButton.addEventListener('click', () => {
       memos = memos.filter((item) => item.id !== memo.id);
@@ -113,11 +126,13 @@ function renderMemos(): void {
       saveMemos();
     });
 
+    buttonRow.appendChild(editButton);
+    buttonRow.appendChild(pinButton);
+    buttonRow.appendChild(deleteButton);
+
     li.appendChild(title);
     li.appendChild(content);
-    li.appendChild(editButton);
-    li.appendChild(pinButton);
-    li.appendChild(deleteButton);
+    li.appendChild(buttonRow);
 
     memoList.appendChild(li);
   }
