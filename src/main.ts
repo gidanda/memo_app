@@ -1,60 +1,115 @@
-import './style.css'
-import typescriptLogo from './assets/typescript.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import { setupCounter } from './counter.ts'
+const app = document.querySelector<HTMLDivElement>('#app');
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${typescriptLogo}" class="framework" alt="TypeScript logo"/>
-    <img src=${viteLogo} class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.ts</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+if (!app) {
+  throw new Error('app not found');
+}
 
-<div class="ticks"></div>
+app.innerHTML = `
+  <h1>Memo App</h1>
+  <form id="memo-form">
+    <input id="memo-title" type="text" placeholder="タイトル" />
+    <textarea id="memo-content" placeholder="本文"></textarea>
+    <button type="submit">保存</button>
+  </form>
+  <ul id="memo-list"></ul>
+`;
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src=${viteLogo} alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://www.typescriptlang.org" target="_blank">
-          <img class="button-icon" src="${typescriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
+type Memo = {
+  id: number;
+  title: string;
+  content: string;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 
-<div class="ticks"></div>
-<section id="spacer"></section>
-`
+let memos: Memo[] = [];
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+const formElement = document.querySelector<HTMLFormElement>('#memo-form');
+const titleInputElement = document.querySelector<HTMLInputElement>('#memo-title');
+const contentInputElement = document.querySelector<HTMLTextAreaElement>('#memo-content');
+const memoListElement = document.querySelector<HTMLUListElement>('#memo-list');
+
+if (!formElement || !titleInputElement || !contentInputElement || !memoListElement) {
+  throw new Error('required elements not found');
+}
+
+const form = formElement;
+const titleInput = titleInputElement;
+const contentInput = contentInputElement;
+const memoList = memoListElement;
+
+const STORAGE_KEY = 'memos';
+
+function loadMemos(): void {
+  const savedMemos = localStorage.getItem(STORAGE_KEY);
+
+  if (!savedMemos) {
+    return;
+  }
+
+  const parsedMemos: unknown = JSON.parse(savedMemos);
+
+  if (!Array.isArray(parsedMemos)) {
+    return;
+  }
+
+  memos = parsedMemos as Memo[];
+  renderMemos();
+}
+
+function renderMemos(): void {
+  memoList.innerHTML = '';
+
+  for (const memo of memos) {
+    const li = document.createElement('li');
+
+    const title = document.createElement('h2');
+    title.textContent = memo.title;
+
+    const content = document.createElement('p');
+    content.textContent = memo.content;
+
+    li.appendChild(title);
+    li.appendChild(content);
+
+    memoList.appendChild(li);
+  }
+}
+
+function saveMemos(): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(memos));
+}
+
+form.addEventListener('submit', (event) => {
+  event.preventDefault();
+
+  const id = Date.now();
+  const title = titleInput.value.trim();
+  const content = contentInput.value.trim();
+  const isPinned = false;
+  const now = new Date().toISOString();
+
+  if (title === '' || content === '') return;
+  const memo: Memo = {
+    id,
+    title,
+    content,
+    isPinned,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  memos.push(memo);
+
+  renderMemos();
+  saveMemos();
+
+  console.log(memo);
+  console.log(memos);
+
+  titleInput.value = '';
+  contentInput.value = '';
+});
+
+loadMemos();
